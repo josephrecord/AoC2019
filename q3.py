@@ -41,16 +41,13 @@ p2 = ["L998", "U662", "R342", "U104", "R140", "U92", "R67", "D102", "L225", "U26
 current_pos = (0, 0)
 time = 0
 coordinates1 = {current_pos: time}
-
 for instruction in p1:
     coordinates1 = move(coordinates1, instruction)
 
-# print(coordinates1)
 
 current_pos = (0, 0)
 time = 0
 coordinates2 = {current_pos: time}
-
 for instruction in p2:
     coordinates2 = move(coordinates2, instruction)
 
