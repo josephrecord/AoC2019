@@ -84,11 +84,7 @@ for wire in p2:
     else:
         break
 
-#print(coordinates2)
-
-
 intersection = set(get_list(coordinates1)).intersection(set(get_list(coordinates2)))
-#print(intersection)
 
 times = []
 for each in intersection:
