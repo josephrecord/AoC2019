@@ -26,7 +26,7 @@ def get_num_params(operation):
     opcode = get_opcode(operation)
     if opcode == 1 or opcode == 2 or opcode == 7 or opcode == 8:
         np = 3
-    elif opcode == 3 or opcode == 4:
+    elif opcode == 3 or opcode == 4 or opcode == 99:
         np = 1
     elif opcode == 5 or opcode == 6:
         np = 2
@@ -66,7 +66,7 @@ def get_operands(instruct, ip):
     elif np == 1:
         if pm0 == 0:
             op1 = instruct[instruct[ip+1]]
-        elif pm0 == 1:
+        else:
             op1 = instruct[ip+1]
         return [op1]
 
