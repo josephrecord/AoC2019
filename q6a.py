@@ -9,11 +9,6 @@ def count_orbits(d, p):
         return count_orbits.counter
 
 
-def prev_planet(d, p):
-    prev = d.get(p)
-    return prev
-
-
 orbitee_list = []
 orbiter_list = []
 
