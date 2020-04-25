@@ -1,11 +1,3 @@
-
-# def first_common_anncestor(d, p1, p2):
-#     p1_ancestors = []
-#     p2_ancestors = []
-#     p1_ancestors.append(prev_planet(d, p1))
-#     p2_ancestors.append(prev_planet(d, p2))
-
-
 def list_ancestors(d, p, a):
     prev = d.get(p)
     if prev is None:
