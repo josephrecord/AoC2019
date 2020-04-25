@@ -1,4 +1,5 @@
 import sys
+import itertools
 
 
 def get_param_modes(operation):
@@ -71,9 +72,11 @@ def get_operands(instruct, ip):
         return [op1]
 
 
-def run_prog(program, inputs):
+def amplifier(program, inputs):
+    # phase setting is in1, output of prev amplifier is in2
     assert type(program) == list, "program must be a list"
     ip = 0
+    input_index = 0
 
     while True:
         print("program is ", program)
@@ -106,16 +109,16 @@ def run_prog(program, inputs):
             # takes a single integer as input and saves it to the position given by its only parameter
             param1 = program[ip + 1]
             # user_input = int(input("Enter a value: "))
-            program[param1] = inputs[i]
-            i += 1
+            program[param1] = inputs[input_index]
+            input_index += 1
             ip = ip + 2
         elif opcode == 4:
             # outputs the value of its only parameter
             param1 = program[ip + 1]
             op1 = get_operands(program, ip)
-            prog_out = op1
+            prog_out = int(op1[0])
             # print("param1 is ", param1)
-            # print("OUTPUT: ", op1)
+            print("OUTPUT: ", op1)
             ip = ip + 2
         elif opcode == 5:
             # jump-if-true: if 1st param is nonzero, set the ip to val from the 2nd param. else, do nothing
@@ -162,18 +165,41 @@ def run_prog(program, inputs):
             ip = ip + 4
         elif opcode == 99:
             print("END OF GOOD PROGRAM")
-            return program, prog_out
+            return prog_out
         else:
             print("ERROR - OPCODE ", opcode, " NOT VALID")
             sys.exit()
 
 
 
-
+ans = []
 prog = [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
+prog2 = [3,23,3,24,1002,24,10,24,1002,23,-1,23,101,5,23,23,1,24,23,23,4,23,99,0,0]
+p = [3,8,1001,8,10,8,105,1,0,0,21,38,47,64,85,106,187,268,349,430,99999,3,9,1002,9,4,9,1001,9,4,9,1002,9,4,9,4,9,99,3,9,1002,9,4,9,4,9,99,3,9,1001,9,3,9,102,5,9,9,1001,9,5,9,4,9,99,3,9,101,3,9,9,102,5,9,9,1001,9,4,9,102,4,9,9,4,9,99,3,9,1002,9,3,9,101,2,9,9,102,4,9,9,101,2,9,9,4,9,99,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,101,1,9,9,4,9,3,9,102,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1002,9,2,9,4,9,99,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,101,2,9,9,4,9,3,9,101,1,9,9,4,9,99,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,3,9,101,1,9,9,4,9,3,9,101,1,9,9,4,9,3,9,1002,9,2,9,4,9,99,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,101,1,9,9,4,9,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,102,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,101,2,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1002,9,2,9,4,9,99,3,9,1002,9,2,9,4,9,3,9,101,1,9,9,4,9,3,9,102,2,9,9,4,9,3,9,1001,9,2,9,4,9,3,9,1002,9,2,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,1002,9,2,9,4,9,3,9,1001,9,1,9,4,9,3,9,102,2,9,9,4,9,99]
 phase_sequence = [4, 3, 2, 1, 0]
 
-print(run_prog(prog))
+phase_seqs = list(itertools.permutations("01234"))
+
+for phase in phase_seqs:
+    in1 = int(phase[0])
+    in2 = int(phase[1])
+    in3 = int(phase[2])
+    in4 = int(phase[3])
+    in5 = int(phase[4])
+
+    print(in1, in2, in3, in4, in5)
+
+
+    out1 = amplifier(p, [in1, 0])
+    print("amp 1 output: ", out1)
+    out2 = amplifier(p, [in2, out1])
+    out3 = amplifier(p, [in3, out2])
+    out4 = amplifier(p, [in4, out3])
+    out5 = amplifier(p, [in5, out4])
+
+    ans.append(out5)
+
+print(max(ans))
 
 
 
