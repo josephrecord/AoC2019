@@ -170,7 +170,7 @@ def amp(program, ip, inputs, last_out):
             prog_out = last_out
             return tuple(program), ip, prog_out, halt
         else:
-            # print("ERROR - OPCODE ", opcode, " NOT VALID")
+            print("ERROR - OPCODE ", opcode, " NOT VALID")
             sys.exit()
 
 
