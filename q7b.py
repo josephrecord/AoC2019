@@ -1,19 +1,17 @@
 import itertools
 import sys
-global halt
-global lastout
-lastout = 0
+
 
 def get_param_modes(operation):
     assert type(operation) == int, "can only get parameter modes for operations"
-    s = str(operation)
-    l = len(s)
-    if l <= 2:
+    str_op = str(operation)
+    length = len(str_op)
+    if length <= 2:
         return 0, 0
-    elif l == 3:
-        return int(s[0]), 0
+    elif length == 3:
+        return int(str_op[0]), 0
     else:
-        param_modes = tuple(map(int, reversed(s[:-2])))
+        param_modes = tuple(map(int, reversed(str_op[:-2])))
         return param_modes
 
 
