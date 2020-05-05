@@ -1,3 +1,6 @@
+import pylab as plt
+import numpy as np
+
 def get_pixels(pixel_position, image):
     return [x[pixel_position] for x in image]
 
@@ -53,4 +56,7 @@ for i in range(layer_size):
     pixel = get_pixel_color(pixels)
     final_img.append(pixel)
 
-print(fold(num_rows, num_cols, final_img))
+final_img = [int(x) for x in final_img]
+
+f = np.array(final_img).reshape(num_rows,num_cols)
+im = plt.imshow(f, cmap='binary_r')
