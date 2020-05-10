@@ -5,7 +5,8 @@ start_time = time.time()
 
 with open('q1.txt') as f:
     raw = f.readlines()
-    dat = list(map(int, raw))
+
+dat = [int(x) for x in raw]
 
 ans1 = []
 ans2 = []
