@@ -79,14 +79,14 @@ def get_param_modes(operation):
             return "param modes error"
 
 
-def get_params(program, ip, rb):
+def get_params(program, ip):
     operation = program[ip]
     op, np = get_opcode(operation)
     param_modes = get_param_modes(operation)
     params = []
     for p in range(np):
         params.append(program[ip + p+1])
-    return zip(params, param_modes)
+    return list(zip(params, param_modes))
 
 
 def compute(program):
@@ -161,9 +161,15 @@ def compute(program):
             ip = ip + 4
         elif opcode == 9:
             # adjusts the relative base by the value of its only parameter
-            operands = get_operands(program, ip, rb)
-            op1 = operands[0]
-            rb += mem_read(program, op1)
+            params = get_params(program, ip)
+            for i in range(len(params)):
+                param, param_mode = params[i]
+                if param_mode == 1:
+                    rb += param
+                elif param_mode == 0:
+                    rb += mem_read(program, param)
+                else:
+                    rb += mem_read(program, rb + param)
             ip = ip + 2
         elif opcode == 99:
             sys.exit()
