@@ -53,7 +53,6 @@ def get_param_modes(operation):
     opcode, np = get_opcode(operation)
     str_op = str(operation)
     length = len(str_op)
-
     if np == 1:
         if length <= 2:
             return [0]
@@ -80,69 +79,63 @@ def get_param_modes(operation):
             return "param modes error"
 
 
-def get_operands(program, ip, rel_base):
-    operands = []
+def get_params(program, ip, rb):
     operation = program[ip]
-    params = get_param_modes(operation)
-    for param in params:
-        if param == 0:
-            operands.append(mem_read(program, mem_read(program, ip + 1)))
-        elif param == 1:
-            operands.append(mem_read(program, ip + 1))
-        elif param == 2:
-            a = mem_read(program, ip + 1)
-            rel_base += a
-            operands.append(mem_read(program, rel_base))
-        else:
-            print("get operands error")
-        ip += 1
-    return operands
+    op, np = get_opcode(operation)
+    param_modes = get_param_modes(operation)
+    params = []
+    for p in range(np):
+        params.append(program[ip + p+1])
+    return zip(params, param_modes)
 
 
 def compute(program):
     # assert type(program) is tuple, "program must be a tuple"
 
     ip = 0
-    rel_base = 0
+    rb = 0
 
     while True:
+        # print(program)
         instruction = program[ip]
         opcode, np = get_opcode(instruction)
 
         if opcode == 1:
-            operands = get_operands(program, ip, rel_base)
+            operands = get_operands(program, ip, rb)
             result = operands[0] + operands[1]
             program = mem_write(program, program[ip + 3], result)
             ip = ip + 4
         elif opcode == 2:
-            operands = get_operands(program, ip + 3, rel_base)
+            operands = get_operands(program, ip, rb)
             result = operands[0] * operands[1]
             program = mem_write(program, program[ip + 3], result)
             ip = ip + 4
         elif opcode == 3:
             # takes a single integer as input and saves it to the position given by its only parameter
-            param1 = program[ip + 1]
-            # user_input = int(input("Enter a value: "))
-            program[param1] = inputs[input_index]
-            input_index += 1
+            operand = get_operands(program, ip, rb)
+            user_input = int(input("Enter a value: "))
+            program = mem_write(program, operand[0], user_input)
             ip = ip + 2
         elif opcode == 4:
             # outputs the value of its only parameter
-            OUTPUT = get_operands(program, ip, rel_base)
-            print("OUTPUT: ", OUTPUT)
-            if OUTPUT == [99]:
+            operand = get_operands(program, ip, rb)
+            op1 = operand[0]
+            output = mem_read(program, op1)
+            print("OUTPUT: ", output)
+            if output == [99]:
                 sys.exit()
             ip = ip + 2
         elif opcode == 5:
             # jump-if-true: if 1st param is nonzero, set the ip to val from the 2nd param. else, do nothing
-            op1, op2 = get_operands(program, ip, rel_base)
+            operands = get_operands(program, ip, rb)
+            op1, op2 = operands[0], operands[1]
             if op1 != 0:
                 ip = op2
             else:
                 ip = ip + 3
         elif opcode == 6:
             # jump-if-false: if 1st param is 0, set ip to val from the 2nd param. else, do nothing
-            operands = get_operands(program, ip, rel_base)
+            operands = get_operands(program, ip, rb)
             op1, op2 = operands[0], operands[1]
             if op1 == 0:
                 ip = op2
@@ -150,15 +143,16 @@ def compute(program):
                 ip = ip + 3
         elif opcode == 7:
             # less than: if 1st param < 2nd param, store 1 in the position given by the 3rd param. else, store 0
-            op1, op2, op3 = get_operands(program, ip, rel_base)
+            operands = get_operands(program, ip, rb)
+            op1, op2, op3 = operands[0], operands[1], operands[2]
             if op1 < op2:
-                program[op3] = 1
+                program = mem_write(program, program[ip + 3], 1)
             else:
-                program[op3] = 0
+                program = mem_write(program, program[ip + 3], 0)
             ip = ip + 4
         elif opcode == 8:
             # equals: if  1st param = 2nd param, store 1 in the position given by the 3rd param. else, store 0
-            operands = get_operands(program, ip, rel_base)
+            operands = get_operands(program, ip, rb)
             op1, op2, op3 = operands[0], operands[1], operands[2]
             if op1 == op2:
                 program = mem_write(program, program[ip + 3], 1)
@@ -167,8 +161,9 @@ def compute(program):
             ip = ip + 4
         elif opcode == 9:
             # adjusts the relative base by the value of its only parameter
-            operand = get_operands(program, ip, rel_base)
-            rel_base += operand[0]
+            operands = get_operands(program, ip, rb)
+            op1 = operands[0]
+            rb += mem_read(program, op1)
             ip = ip + 2
         elif opcode == 99:
             sys.exit()
@@ -177,6 +172,23 @@ def compute(program):
             sys.exit()
 
 
-p = [109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99]
+with open('q9input.txt') as f:
+    raw = f.readline().split(",")
 
-o = compute(p)
+prog = [int(x) for x in raw]
+
+
+
+p = [109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99]
+p2 = [1102, 34915192, 34915192, 7, 4, 7, 99, 0]
+p3 = [104, 1125899906842624, 99]
+p4 = [109, -1, 4, 1, 99] #outputs - 1
+p5 = [109, -1, 104, 1, 99] #outputs 1
+p6 = [109, -1, 204, 1, 99] #outputs 109
+p7 = [109, 1, 9, 2, 204, -6, 99] # outputs 204
+p8 = [109, 1, 109, 9, 204, -6, 99] #outputs 204
+p9 = [109, 1, 209, -1, 204, -106, 99] #outputs 204
+p10 = [109, 1, 3, 3, 204, 2, 99] # outputs the input
+p11 = [109, 1, 203, 2, 204, 2, 99] #outputs the input
+
+o = compute(p8)
