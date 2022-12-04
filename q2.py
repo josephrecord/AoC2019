@@ -1,17 +1,7 @@
+from typing import Tuple
 
-prog = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
-prog2 = [2,4,4,5,99,0]
 
-with open("input_day2.txt") as f:
-    input = [int(x) for x in f.readline().split(",")]
-
-# before running the program, replace position 1 with the value 12
-# and replace position 2 with the value 2. What value is left at 
-# position 0 after the program halts?
-input[1] = 12
-input[2] = 2
-
-def run(prog):
+def run(prog: list[int]) -> int:
     # start at beginning of program
     index = 0
     # get opcode
@@ -19,34 +9,69 @@ def run(prog):
     while opcode != 99:
         if opcode == 1:
             # Addition
-            print(f"Addition: {prog[index:index+4]}")
             operand_1_location = prog[index + 1]
             operand_2_location = prog[index + 2]
             output_location = prog[index + 3]
             opperand1 = prog[operand_1_location]
             opperand2 = prog[operand_2_location]
             output_value = opperand1 + opperand2
-            print(output_value)
             # Overwrite the value at `output_location`
-            prog[output_location] = output_value
+            try:
+                prog[output_location] = output_value
+            except IndexError:
+                # Tried to write past the length of prog
+                return -999
             # Move the program counter
             index = index + 4
         elif opcode == 2:
             # Multiplication
-            print(f"Multiplication: {prog[index:index+4]}")
             operand_1_location = prog[index + 1]
             operand_2_location = prog[index + 2]
             output_location = prog[index + 3]
             opperand1 = prog[operand_1_location]
             opperand2 = prog[operand_2_location]
             output_value = opperand1 * opperand2
-            print(output_value)
             # Overwrite the value at `output_location`
-            prog[output_location] = output_value
+            try:
+                prog[output_location] = output_value
+            except IndexError:
+                # Tried to write past the length of prog
+                return -999
             # Move the program counter
             index = index + 4
+        else:
+            return -999
         opcode = prog[index]
-    return prog
+    return prog[0]
 
-run(input)
-        
+
+def solve2(prog_initial_state: Tuple[int]) -> int:
+    """Find the input noun and verb that cause the
+    program to produce the output 19690720. Return 
+    100 * noun + verb."""
+    # Brute force it...
+    for noun in range(100):
+        for verb in range(100):
+            prog = list(prog_initial_state)
+            prog[1] = noun
+            prog[2] = verb
+            output = run(prog)
+            if output == 19690720:
+                return 100 * noun + verb
+
+
+
+def main() -> None:
+    # prog = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
+    # prog2 = [2, 4, 4, 5, 99, 0]
+
+    with open("input_day2.txt") as f:
+        # Make sure initial state is immutable
+        prog_initial_state = tuple(int(x) for x in f.readline().split(","))
+    
+    ans2 = solve2(prog_initial_state)
+    print(ans2)
+
+
+if __name__ == "__main__":
+    main()
