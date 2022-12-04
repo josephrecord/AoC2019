@@ -45,7 +45,7 @@ def run(prog: list[int]) -> int:
     return prog[0]
 
 
-def solve2(prog_initial_state: Tuple[int]) -> int:
+def solve2(prog_initial_state: Tuple[int, ...]) -> int:
     """Find the input noun and verb that cause the
     program to produce the output 19690720. Return 
     100 * noun + verb."""
@@ -58,6 +58,7 @@ def solve2(prog_initial_state: Tuple[int]) -> int:
             output = run(prog)
             if output == 19690720:
                 return 100 * noun + verb
+    raise ValueError("No solution found")
 
 
 
