@@ -1,7 +1,8 @@
 import time
-from typing import NamedTuple
+from typing import NamedTuple, Dict
 
-start_time = time.time()
+
+
 
 class Point(NamedTuple):
     x: int
@@ -12,66 +13,63 @@ def manhattan_distance_from_origin(point: Point) -> int:
     return abs(point.x) + abs(point.y)
 
 
-
 class Wire:
     def __init__(self) -> None:
         self.current_position = Point(0, 0)
-        self.points = set()
-    
+        self.points: Dict[Point, int] = dict()
+        self.num_steps = 0
+        self.offsets = {"U": (0, 1),
+                        "D": (0, -1),
+                        "R": (1, 0),
+                        "L": (-1, 0),
+                    }
+
     def add_points(self, segment: str) -> None:
-        direction = segment[0]
+        x_off, y_off = self.offsets[segment[0]]
         length = int(segment[1:])
-        if direction == "U":
-            for _ in range(length):
-                _new_point = Point(self.current_position.x, self.current_position.y + 1)
-                self.points.add(_new_point)
-                self.current_position = _new_point
-        elif direction == "D":
-            for _ in range(length):
-                _new_point = Point(self.current_position.x, self.current_position.y - 1)
-                self.points.add(_new_point)
-                self.current_position = _new_point
-        elif direction == "R":
-            for _ in range(length):
-                _new_point = Point(self.current_position.x + 1, self.current_position.y)
-                self.points.add(_new_point)
-                self.current_position = _new_point
-        elif direction == "L":
-            for _ in range(length):
-                _new_point = Point(self.current_position.x - 1, self.current_position.y)
-                self.points.add(_new_point)
-                self.current_position = _new_point
-        else:
-            raise ValueError("Invalid direction")
+        for _ in range(length):
+            self.num_steps += 1
+            _new_point = Point(self.current_position.x + x_off, self.current_position.y + y_off)
+            if _new_point not in self.points:
+                self.points[_new_point] = self.num_steps
+            self.current_position = _new_point
 
 
+def solve2(wire_segments: list[list[str]]) -> int:
+    wire1 = Wire()
+    for wire_segment in wire_segments[0]:
+        wire1.add_points(wire_segment)
 
-wire_segment_groups = []
-# test1a = ["R75","D30","R83","U83","L12","D49","R71","U7","L72"]
-# test1b = ["U62","R66","U55","R34","D71","R55","D58","R83"]
+    wire2 = Wire()
+    for wire_segment in wire_segments[1]:
+        wire2.add_points(wire_segment)
 
-with open("input3.txt") as f:
-    for wire_segments in f:
-        wire_segments = wire_segments.strip().split(",")
-        wire_segment_groups.append(wire_segments)
+    common_points = set(wire1.points.keys()).intersection(set(wire2.points.keys()))
+    signal_delays = []
+    for point in common_points:
+        sig_delay_1 = wire1.points[point]
+        sig_delay_2 = wire2.points[point]
+        sig_delay = sig_delay_1 + sig_delay_2
+        signal_delays.append(sig_delay)
+    
+    return min(signal_delays)
+    
 
 
-wire1 = Wire()
-for wire_segment in wire_segment_groups[0]:
-    wire1.add_points(wire_segment)
+def main() -> None:
+    start_time = time.time()
+    wire_segment_list: list[list[str]] = []
 
-wire2 = Wire()
-for wire_segment in wire_segment_groups[1]:
-    wire2.add_points(wire_segment)
+    with open("input3.txt") as f:
+        for line in f:
+            wire_segments: list[str] = line.strip().split(",")
+            wire_segment_list.append(wire_segments)
+    
+    ans2 = solve2(wire_segment_list)
+    print(ans2)
 
-common_points = wire1.points.intersection(wire2.points)
-common_point_distances_from_origin = []
-for point in common_points:
-    distance = manhattan_distance_from_origin(point)
-    common_point_distances_from_origin.append(distance)
+    end_time = time.time()
+    print(end_time - start_time)
 
-print(min(common_point_distances_from_origin))
-
-end_time = time.time()
-
-print(end_time - start_time)
+if __name__ == "__main__":
+    main()
