@@ -1,5 +1,5 @@
 import time
-from typing import NamedTuple, Dict
+from typing import NamedTuple, Dict, Tuple
 
 
 class Point(NamedTuple):
@@ -15,8 +15,8 @@ class Wire:
     def __init__(self) -> None:
         self.current_position = Point(0, 0)
         self.points: Dict[Point, int] = dict()
-        self.num_steps = 0
-        self.offsets = {
+        self.num_steps: int = 0
+        self.directional_offsets: Dict[str, Tuple] = {
             "U": (0, 1),
             "D": (0, -1),
             "R": (1, 0),
@@ -24,16 +24,21 @@ class Wire:
         }
 
     def add_points(self, segment: str) -> None:
-        x_off, y_off = self.offsets[segment[0]]
+        # Direction information is in the first position (e.g. "R421")
+        direction = segment[0]
+        # Get x and y offsets for that direction
+        x_off, y_off = self.directional_offsets[direction]
         length = int(segment[1:])
         for _ in range(length):
             self.num_steps += 1
-            _new_point = Point(
+            new_point = Point(
                 self.current_position.x + x_off, self.current_position.y + y_off
             )
-            if _new_point not in self.points:
-                self.points[_new_point] = self.num_steps
-            self.current_position = _new_point
+            # If point already exists, don't re-add it as we only care about
+            # the shortest path to a given point
+            if new_point not in self.points:
+                self.points[new_point] = self.num_steps
+            self.current_position = new_point
 
 
 def solve2(wire_segments: list[list[str]]) -> int:
