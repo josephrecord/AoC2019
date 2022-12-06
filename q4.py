@@ -1,91 +1,81 @@
-import time
+import collections
 
-start_time = time.time()
-
-def split_dig(num):
-    s = str(num)
-    d0 = int(s[0])
-    d1 = int(s[1])
-    d2 = int(s[2])
-    d3 = int(s[3])
-    d4 = int(s[4])
-    d5 = int(s[5])
-    return (d0, d1, d2, d3, d4, d5)
+from itertools import islice
 
 
-def atleast2match(x):
-    d0 = x[0]
-    d1 = x[1]
-    d2 = x[2]
-    d3 = x[3]
-    d4 = x[4]
-    d5 = x[5]
-    if (d0==d1 or d1==d2 or d2==d3 or d3==d4 or d4==d5):
-        return True
-    else:
-        return False
-
-def exactly2match(x):
-    d0 = x[0]
-    d1 = x[1]
-    d2 = x[2]
-    d3 = x[3]
-    d4 = x[4]
-    d5 = x[5]
-    if (d0==d1 and d1!=d2):
-        return True
-    elif d0!=d1 and d1==d2 and d2!=d3:
-        return True
-    elif d1!=d2 and d2==d3 and d3!=d4:
-        return True
-    elif d2!=d3 and d3==d4 and d4!=d5:
-        return True
-    elif d3!=d4 and d4==d5:
-        return True
-    else:
-        return False
+def adjacent_digits(n: int) -> bool:
+    s = str(n)
+    current_digit = s[0]
+    for next_digit in s[1:]:
+        if current_digit == next_digit:
+            return True
+        current_digit = next_digit
+    return False
 
 
-
-def isascending(x): 
-    d0 = x[0]
-    d1 = x[1]
-    d2 = x[2]
-    d3 = x[3]
-    d4 = x[4]
-    d5 = x[5]
-    if (d5 >= d4 >= d3 >= d2 >= d1 >= d0):
-        return True
-    else:
-        return False
+def sliding_window(iterable, n):
+    # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+    it = iter(iterable)
+    window = collections.deque(islice(it, n), maxlen=n)
+    if len(window) == n:
+        yield tuple(window)
+    for x in it:
+        window.append(x)
+        yield tuple(window)
 
 
-fit_criteria = []
+def adjacent_digits2(n: int) -> bool:
+    s = str(n)
+    current_digit = s[0]
 
-# 235741
-# 706948
-# range(235741, 706948)
-
-testcases = [987654, 112233, 123444, 111122, 555678, 555677]
-
-for num in range(235741, 706948):
-    split_num = split_dig(num)
-    if isascending(split_num) == True:
-        if atleast2match(split_num) == True:
-            if exactly2match(split_num) == True:
-                fit_criteria.append(num)
-                #print(num, " fits criteria")
-            else:
-                pass
-                #print(num, " doesn't fit criteria")
+    adjacencies = []
+    # Buffer with a 0 as the first digit is not adjacent to
+    # a matching digit on the left
+    adjacencies.append(0)
+    for next_digit in s[1:]:
+        # If the current digit matches the next, append 1; else append 0
+        if current_digit == next_digit:
+            adjacencies.append(1)
         else:
-            pass
-            #print(num, " doesn't fit criteria")
-    else:
-        pass
-        #print(num, " doesn't fit criteria")
+            adjacencies.append(0)
+        current_digit = next_digit
+    # Buffer with 0 as the last digit is not adjacent to
+    # a matching digit on the right
+    adjacencies.append(0)
 
-print(len(fit_criteria))
+    # If there are exactly two matching digits adjacent to one another,
+    # we will see a pattern of (0, 1, 0)
+    windows = sliding_window(adjacencies, 3)
+    for window in windows:
+        if window == (0, 1, 0):
+            return True
+    return False
 
 
-print((time.time() - start_time), " sec")
+def digits_increase(n: int) -> bool:
+    s = str(n)
+    current_digit = s[0]
+    for next_digit in s[1:]:
+        if int(next_digit) < int(current_digit):
+            return False
+        current_digit = next_digit
+    return True
+
+
+assert (
+    digits_increase(223450) == False
+), "223450 does not meet these criteria (decreasing pair of digits 50)."
+assert adjacent_digits(123789) == False, "no double digits"
+assert adjacent_digits2(112233) == True
+assert adjacent_digits2(123444) == False
+assert adjacent_digits2(111122) == True
+
+puzzle_input = range(235741, 706948 + 1)
+
+valid_passwords = []
+
+for n in puzzle_input:
+    if adjacent_digits2(n) and digits_increase(n):
+        valid_passwords.append(n)
+
+print(len(valid_passwords))
