@@ -17,10 +17,10 @@ class Wire:
         self.points: Dict[Point, int] = dict()
         self.num_steps: int = 0
         self.directional_offsets: Dict[str, Tuple] = {
-            "U": (0, 1),
-            "D": (0, -1),
-            "R": (1, 0),
-            "L": (-1, 0),
+            "U": ( 0,  1),
+            "D": ( 0, -1),
+            "R": ( 1,  0),
+            "L": (-1,  0),
         }
 
     def add_points(self, segment: str) -> None:
@@ -38,7 +38,7 @@ class Wire:
             # the shortest path to a given point
             if new_point not in self.points:
                 self.points[new_point] = self.num_steps
-            self.current_position = new_point
+            
 
 
 def solve2(wire_segments: list[list[str]]) -> int:
