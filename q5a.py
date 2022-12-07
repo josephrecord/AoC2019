@@ -1,86 +1,151 @@
-import sys
-
-def get_param_modes(instruct):
-    s = str(instruct)
-    l = len(s)
-    if l <= 2:
-        return 0, 0
-    elif l == 3:
-        return int(s[0]), 0
-    else:
-        param_modes = tuple(map(int, reversed(s[:-2])))
-        return param_modes
+from typing import Tuple
 
 
-def get_opcode(instruct):
-    s = str(instruct)
-    opcode = int(s[-2:])
-    return opcode
+def interpret_command(ABCDE: int) -> Tuple[int, list[int]]:
+    """
+    ABCDE   <-- Let's call this a command
+     1002
+    DE - two-digit opcode,      02 == opcode 2
+    C - mode of 1st parameter,  0 == position mode
+    B - mode of 2nd parameter,  1 == immediate mode
+    A - mode of 3rd parameter,  0 == position mode, omitted due to being a leading zero
+    """
+    opcode = int(str(ABCDE)[-2:])   # opcode is last two digits
+    param_modes = []
+    for digit in str(ABCDE)[:-2]:
+        param_modes.append(int(digit))
+    return opcode, param_modes
 
-def run_prog(intcode):
-    ip = 0
 
-    while True:
-        # print("intcode is ", intcode)
-        instruction = intcode[ip]
-        # print("instruction is ", instruction)
-        opcode = get_opcode(instruction)
-        # print("opcode is ", opcode)
-        param_modes = get_param_modes(instruction)
-        # print("param modes are ", param_modes)
+def pop_param_mode(param_mode_list: list[int]) -> int:
+    try:
+        return param_mode_list.pop()
+    except IndexError:
+        return 0
 
+
+
+def run(prog: list[int]) -> int:
+    # start at beginning of program
+    instruction_pointer = 0
+    # get opcode
+    opcode, param_modes = interpret_command(prog[instruction_pointer])
+    while opcode != 99:
+        # print(f"Instruction pointer: {instruction_pointer}")
         if opcode == 1:
-            # addition
-            param1, param2, param3 = intcode[ip + 1], intcode[ip + 2], intcode[ip + 3]
-            if param_modes[0] == 0 and param_modes[1] == 0:
-                intcode[param3] = intcode[param1] + intcode[param2]
-            elif param_modes[0] == 1 and param_modes[1] == 1:
-                intcode[param3] = param1 + param2
-            elif param_modes[0] == 1 and param_modes[1] == 0:
-                intcode[param3] = param1 + intcode[param2]
-            elif param_modes[0] == 0 and param_modes[1] == 1:
-                intcode[param3] = intcode[param1] + param2
-            else: print("oops")
-            ip = ip + 4
+            # Addition
+            param1_mode = pop_param_mode(param_modes)
+            if param1_mode == 0:   # Position mode (standard)
+                param1 = prog[instruction_pointer + 1]
+                opperand1 = prog[param1]
+            elif param1_mode == 1: # Immediate mode (new)
+                param1 = prog[instruction_pointer + 1]
+                opperand1 = param1
+            else:
+                raise ValueError(f"Improper param mode in Addition {prog[instruction_pointer:instruction_pointer+4]}")
+            
+            param2_mode = pop_param_mode(param_modes)
+            if param2_mode == 0:   # Position mode (standard)
+                param2 = prog[instruction_pointer + 2]
+                opperand2 = prog[param2]
+            elif param2_mode == 1: # Immediate mode (new)
+                param2 = prog[instruction_pointer + 2]
+                opperand2 = param2
+            else:
+                raise ValueError(f"Improper param mode in Addition {prog[instruction_pointer:instruction_pointer+4]}")
+            
+            output_value = opperand1 + opperand2
+            param3 = prog[instruction_pointer + 3]  # Third param in addition is the output address
+            # Parameters that an instruction writes to will never be in immediate mode.
+            # Overwrite the value at `output_location`
+            try:
+                prog[param3] = output_value
+            except IndexError:
+                # Tried to write past the length of prog
+                return -999
+            # Move the program counter
+            instruction_pointer += 4
+        
         elif opcode == 2:
-            # multiplication
-            param1, param2, param3 = intcode[ip + 1], intcode[ip + 2], intcode[ip + 3]
-            if param_modes[0] == 0 and param_modes[1] == 0:
-                intcode[param3] = intcode[param1] * intcode[param2]
-            elif param_modes[0] == 1 and param_modes[1] == 1:
-                intcode[param3] = param1 * param2
-            elif param_modes[0] == 1 and param_modes[1] == 0:
-                intcode[param3] = param1 * intcode[param2]
-            elif param_modes[0] == 0 and param_modes[1] == 1:
-                intcode[param3] = intcode[param1] * param2
-            else: print("oopsies")
-            ip = ip + 4
+            # Multiplication
+            param1_mode = pop_param_mode(param_modes)
+            if param1_mode == 0:   # Position mode (standard)
+                param1 = prog[instruction_pointer + 1]
+                opperand1 = prog[param1]
+            elif param1_mode == 1: # Immediate mode (new)
+                param1 = prog[instruction_pointer + 1]
+                opperand1 = param1
+            else:
+                raise ValueError(f"Invalid param mode in mult {prog[instruction_pointer:instruction_pointer+4]}")
+            
+            param2_mode = pop_param_mode(param_modes)
+            if param2_mode == 0:   # Position mode (standard)
+                param2 = prog[instruction_pointer + 2]
+                opperand2 = prog[param2]  # In position mode, the param is interpreted as an address
+            elif param2_mode == 1: # Immediate mode (new)
+                param2 = prog[instruction_pointer + 2]
+                opperand2 = param2
+            else:
+                raise ValueError(f"Invalid param mode in mult {prog[instruction_pointer:instruction_pointer+4]}")
+            
+            output_value = opperand1 * opperand2
+            param3 = prog[instruction_pointer + 3]  # Third param in addition is the output address
+            # Parameters that an instruction writes to will never be in immediate mode.
+            # Overwrite the value at `output_location`
+            try:
+                prog[param3] = output_value
+            except IndexError:
+                # Tried to write past the length of prog
+                return -999
+            # Move the program counter
+            instruction_pointer += 4
+        
         elif opcode == 3:
-            # takes a single integer as input and saves it to the position given by its only parameter
-            param1 = intcode[ip + 1]
-            user_input = int(input("Enter a value: "))
-            intcode[param1] = user_input
-            ip = ip + 2
+            # Save user input to program
+            # Opcode 3 takes a single integer as input and saves
+            # it to the position given by its only parameter. 
+            # For example, the instruction 3,50 would take an 
+            # input value and store it at address 50.
+            user_input = int(input("Enter a number: "))
+            # Overwrite the value at the location given by the parameter.
+            save_location = prog[instruction_pointer + 1]
+            try:
+                prog[save_location] = user_input
+            except IndexError:
+                # Tried to write past the length of prog
+                return -999
+            instruction_pointer += 2
+        
         elif opcode == 4:
-            # outputs the value of its only parameter
-            param1 = intcode[ip + 1]
-            print("OUTPUT: ", intcode[param1])
-            ip = ip + 2
-        elif opcode == 99:
-            print("END OF GOOD PROGRAM")
-            return intcode
+            # Opcode 4 outputs the value of its only parameter.
+            # For example, the instruction 4,50 would output
+            # the value at address 50.
+            param1 = prog[instruction_pointer + 1]
+            output_val = prog[param1]
+            print(f"Output: {output_val}")
+            instruction_pointer += 2
+        
         else:
-            print("ERROR - OPCODE ", opcode, " NOT VALID")
-            sys.exit()
+            return -999
+        # Get the next opcode and parameter modes at the new instruction pointer
+        opcode, param_modes = interpret_command(prog[instruction_pointer])
+    return prog
 
 
-testprog1 = [1002, 4, 3, 4, 33]
-testprog2 = [3, 0, 4, 0, 99]
-testprog3 = [1101, 100, -1, 4, 0]
-
-program = [3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 1102, 31, 68, 225, 1001, 13, 87, 224, 1001, 224, -118, 224, 4, 224, 102, 8, 223, 223, 1001, 224, 7, 224, 1, 223, 224, 223, 1, 174, 110, 224, 1001, 224, -46, 224, 4, 224, 102, 8, 223, 223, 101, 2, 224, 224, 1, 223, 224, 223, 1101, 13, 60, 224, 101, -73, 224, 224, 4, 224, 102, 8, 223, 223, 101, 6, 224, 224, 1, 224, 223, 223, 1101, 87, 72, 225, 101, 47, 84, 224, 101, -119, 224, 224, 4, 224, 1002, 223, 8, 223, 1001, 224, 6, 224, 1, 223, 224, 223, 1101, 76, 31, 225, 1102, 60, 43, 225, 1102, 45, 31, 225, 1102, 63, 9, 225, 2, 170, 122, 224, 1001, 224, -486, 224, 4, 224, 102, 8, 223, 223, 101, 2, 224, 224, 1, 223, 224, 223, 1102, 29, 17, 224, 101, -493, 224, 224, 4, 224, 102, 8, 223, 223, 101, 1, 224, 224, 1, 223, 224, 223, 1102, 52, 54, 225, 1102, 27, 15, 225, 102, 26, 113, 224, 1001, 224, -1560, 224, 4, 224, 102, 8, 223, 223, 101, 7, 224, 224, 1, 223, 224, 223, 1002, 117, 81, 224, 101, -3645, 224, 224, 4, 224, 1002, 223, 8, 223, 101, 6, 224, 224, 1, 223, 224, 223, 4, 223, 99, 0, 0, 0, 677, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1105, 0, 99999, 1105, 227, 247, 1105, 1, 99999, 1005, 227, 99999, 1005, 0, 256, 1105, 1, 99999, 1106, 227, 99999, 1106, 0, 265, 1105, 1, 99999, 1006, 0, 99999, 1006, 227, 274, 1105, 1, 99999, 1105, 1, 280, 1105, 1, 99999, 1, 225, 225, 225, 1101, 294, 0, 0, 105, 1, 0, 1105, 1, 99999, 1106, 0, 300, 1105, 1, 99999, 1, 225, 225, 225, 1101, 314, 0, 0, 106, 0, 0, 1105, 1, 99999, 8, 226, 677, 224, 102, 2, 223, 223, 1005, 224, 329, 1001, 223, 1, 223, 1108, 677, 226, 224, 102, 2, 223, 223, 1006, 224, 344, 101, 1, 223, 223, 108, 677, 226, 224, 102, 2, 223, 223, 1006, 224, 359, 101, 1, 223, 223, 7, 677, 226, 224, 102, 2, 223, 223, 1005, 224, 374, 101, 1, 223, 223, 1007, 226, 677, 224, 102, 2, 223, 223, 1005, 224, 389, 101, 1, 223, 223, 8, 677, 677, 224, 102, 2, 223, 223, 1006, 224, 404, 1001, 223, 1, 223, 1007, 677, 677, 224, 1002, 223, 2, 223, 1006, 224, 419, 101, 1, 223, 223, 1108, 677, 677, 224, 1002, 223, 2, 223, 1005, 224, 434, 1001, 223, 1, 223, 1107, 226, 677, 224, 102, 2, 223, 223, 1005, 224, 449, 101, 1, 223, 223, 107, 226, 226, 224, 102, 2, 223, 223, 1006, 224, 464, 101, 1, 223, 223, 1108, 226, 677, 224, 1002, 223, 2, 223, 1005, 224, 479, 1001, 223, 1, 223, 7, 677, 677, 224, 102, 2, 223, 223, 1006, 224, 494, 1001, 223, 1, 223, 1107, 677, 226, 224, 102, 2, 223, 223, 1005, 224, 509, 101, 1, 223, 223, 107, 677, 677, 224, 1002, 223, 2, 223, 1006, 224, 524, 101, 1, 223, 223, 1008, 677, 677, 224, 1002, 223, 2, 223, 1006, 224, 539, 101, 1, 223, 223, 7, 226, 677, 224, 1002, 223, 2, 223, 1005, 224, 554, 101, 1, 223, 223, 108, 226, 226, 224, 1002, 223, 2, 223, 1006, 224, 569, 101, 1, 223, 223, 1008, 226, 677, 224, 102, 2, 223, 223, 1005, 224, 584, 101, 1, 223, 223, 8, 677, 226, 224, 1002, 223, 2, 223, 1005, 224, 599, 101, 1, 223, 223, 1007, 226, 226, 224, 1002, 223, 2, 223, 1005, 224, 614, 101, 1, 223, 223, 1107, 226, 226, 224, 1002, 223, 2, 223, 1006, 224, 629, 101, 1, 223, 223, 107, 677, 226, 224, 1002, 223, 2, 223, 1005, 224, 644, 1001, 223, 1, 223, 1008, 226, 226, 224, 1002, 223, 2, 223, 1006, 224, 659, 101, 1, 223, 223, 108, 677, 677, 224, 1002, 223, 2, 223, 1005, 224, 674, 1001, 223, 1, 223, 4, 223, 99, 226]
+def solve1(prog: Tuple[int, ...]) -> int:
+    prog = list(prog)
+    run(prog)
 
 
-print(run_prog(program))
+def main() -> None:
+
+    with open("input5.txt") as f:
+        # Make sure initial state is immutable
+        prog_initial_state = tuple(int(x) for x in f.readline().split(","))
+    
+    ans1 = solve1(prog_initial_state)
+    print(ans1)
 
 
+if __name__ == "__main__":
+    main()
